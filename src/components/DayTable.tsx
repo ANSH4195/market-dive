@@ -3,16 +3,27 @@ import { useMemo, useRef, useState } from 'react'
 import { type Day, fmt } from '@/lib/data'
 
 type Key = keyof Day
-const COLS: { key: Key; label: string }[] = [
+// `detail` columns are hidden on phones and shown in the row's expanded panel instead
+const COLS: { key: Key; label: string; detail?: true }[] = [
   { key: 'date', label: 'Date' },
-  { key: 'open', label: 'Open' },
-  { key: 'high', label: 'High' },
-  { key: 'low', label: 'Low' },
-  { key: 'close', label: 'Close' },
+  { key: 'open', label: 'Open', detail: true },
+  { key: 'high', label: 'High', detail: true },
+  { key: 'low', label: 'Low', detail: true },
+  { key: 'close', label: 'Close', detail: true },
   { key: 'range', label: 'Range (pts)' },
-  { key: 'rangePct', label: 'Range %' },
-  { key: 'chgPct', label: 'Day chg %' },
+  { key: 'rangePct', label: 'Range %', detail: true },
+  { key: 'chgPct', label: 'Day chg %', detail: true },
 ]
+const DETAIL_COLS = COLS.filter((c) => c.detail)
+const MOBILE_COLSPAN = COLS.length - DETAIL_COLS.length + 1 // +1 for the chevron column
+
+const chgClass = (v: number | null) => (v == null ? '' : v >= 0 ? 'text-up' : 'text-down')
+
+function cellText(d: Day, key: Key) {
+  if (key === 'date') return d.date
+  if (key === 'chgPct') return d.chgPct == null ? '—' : `${d.chgPct >= 0 ? '+' : ''}${fmt(d.chgPct)}`
+  return fmt(d[key])
+}
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -28,6 +39,13 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
   const [year, setYear] = useState('')
   const [month, setMonth] = useState('')
   const [day, setDay] = useState('')
+  const [open, setOpen] = useState<Set<string>>(() => new Set())
+  const toggle = (date: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(date)) next.add(date)
+      return next
+    })
 
   const years = useMemo(() => partsOf(days, '', 0, 4).reverse(), [days])
   const months = useMemo(() => (year ? partsOf(days, `${year}-`, 5, 7) : []), [days, year])
@@ -52,7 +70,8 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
     overscan: 15,
   })
   const items = virtualizer.getVirtualItems()
-  // Spacer rows stand in for the off-screen rows so the table keeps its real scroll height
+  // Spacer rows stand in for the off-screen rows so the table keeps its real scroll height.
+  // Each virtual item is its own <tbody> so a row and its expanded panel are measured together.
   const padTop = items[0]?.start ?? 0
   const padBottom = items.length ? virtualizer.getTotalSize() - items[items.length - 1].end : 0
 
@@ -122,7 +141,9 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
                 <th
                   key={c.key}
                   aria-sort={sortKey === c.key ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                  className={`sticky top-0 z-10 border-b-[2.5px] border-ink bg-butter p-0 ${i ? 'text-right' : 'text-left'}`}
+                  className={`sticky top-0 z-10 border-b-[2.5px] border-ink bg-butter p-0 ${i ? 'text-right' : 'text-left'} ${
+                    c.detail ? 'hidden md:table-cell' : ''
+                  }`}
                 >
                   <button
                     type="button"
@@ -136,51 +157,94 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
                   </button>
                 </th>
               ))}
+              <th className="sticky top-0 z-10 w-10 border-b-[2.5px] border-ink bg-butter md:hidden">
+                <span className="sr-only">Details</span>
+              </th>
             </tr>
           </thead>
-          <tbody>
-            {padTop > 0 && (
-              <tr aria-hidden>
-                <td colSpan={COLS.length} style={{ height: padTop, padding: 0 }} />
+          {padTop > 0 && (
+            <tbody aria-hidden>
+              <tr>
+                <td colSpan={COLS.length + 1} style={{ height: padTop, padding: 0 }} />
               </tr>
-            )}
-            {items.map(({ index }) => {
-              const d = rows[index]
-              return (
+            </tbody>
+          )}
+          {items.map(({ index }) => {
+            const d = rows[index]
+            const isOpen = open.has(d.date)
+            return (
+              <tbody
+                key={d.date}
+                data-index={index}
+                ref={virtualizer.measureElement}
+                className="border-b border-lavender"
+              >
                 <tr
-                  key={d.date}
-                  data-index={index}
-                  ref={virtualizer.measureElement}
-                  className="border-b border-lavender hover:bg-lilac"
+                  onClick={() => toggle(d.date)}
+                  className={`cursor-pointer hover:bg-lilac md:cursor-auto ${isOpen ? 'bg-lilac md:bg-transparent' : ''}`}
                 >
-                  <td className="px-3 py-1.5 whitespace-nowrap">{d.date}</td>
-                  <td className="px-3 py-1.5 text-right">{fmt(d.open)}</td>
-                  <td className="px-3 py-1.5 text-right">{fmt(d.high)}</td>
-                  <td className="px-3 py-1.5 text-right">{fmt(d.low)}</td>
-                  <td className="px-3 py-1.5 text-right">{fmt(d.close)}</td>
-                  <td className="px-3 py-1.5 text-right font-bold text-plum">{fmt(d.range)}</td>
-                  <td className="px-3 py-1.5 text-right">{fmt(d.rangePct)}</td>
-                  <td
-                    className={`px-3 py-1.5 text-right ${d.chgPct == null ? '' : d.chgPct >= 0 ? 'text-up' : 'text-down'}`}
-                  >
-                    {d.chgPct == null ? '—' : `${d.chgPct >= 0 ? '+' : ''}${fmt(d.chgPct)}`}
+                  {COLS.map((c, i) => (
+                    <td
+                      key={c.key}
+                      className={`px-3 py-2 whitespace-nowrap md:py-1.5 ${i ? 'text-right' : ''} ${
+                        c.detail ? 'hidden md:table-cell' : ''
+                      } ${c.key === 'range' ? 'font-bold text-plum' : ''} ${c.key === 'chgPct' ? chgClass(d.chgPct) : ''}`}
+                    >
+                      {cellText(d, c.key)}
+                    </td>
+                  ))}
+                  <td className="w-10 pr-3 text-right md:hidden">
+                    <button
+                      type="button"
+                      aria-expanded={isOpen}
+                      aria-label={`${isOpen ? 'Hide' : 'Show'} details for ${d.date}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggle(d.date)
+                      }}
+                      className={`inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-2 border-ink font-sans text-xs transition-transform ${
+                        isOpen ? 'rotate-180 bg-lavender' : 'bg-white'
+                      }`}
+                    >
+                      ▾
+                    </button>
                   </td>
                 </tr>
-              )
-            })}
-            {padBottom > 0 && (
-              <tr aria-hidden>
-                <td colSpan={COLS.length} style={{ height: padBottom, padding: 0 }} />
-              </tr>
-            )}
-            {!rows.length && (
+                {isOpen && (
+                  <tr className="bg-lilac md:hidden">
+                    <td colSpan={MOBILE_COLSPAN} className="px-3 pt-1 pb-3">
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        {DETAIL_COLS.map((c) => (
+                          <div key={c.key} className="flex flex-col">
+                            <dt className="font-sans text-[10px] font-bold tracking-wider text-ink-soft uppercase">
+                              {c.label}
+                            </dt>
+                            <dd className={c.key === 'chgPct' ? chgClass(d.chgPct) : ''}>{cellText(d, c.key)}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            )
+          })}
+          {padBottom > 0 && (
+            <tbody aria-hidden>
               <tr>
-                <td colSpan={COLS.length} className="px-3 py-8 text-center font-sans text-ink-soft">
+                <td colSpan={COLS.length + 1} style={{ height: padBottom, padding: 0 }} />
+              </tr>
+            </tbody>
+          )}
+          {!rows.length && (
+            <tbody>
+              <tr>
+                <td colSpan={COLS.length + 1} className="px-3 py-8 text-center font-sans text-ink-soft">
                   No trading days match this date.
                 </td>
               </tr>
-            )}
-          </tbody>
+            </tbody>
+          )}
         </table>
       </div>
     </section>
