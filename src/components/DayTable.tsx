@@ -157,7 +157,7 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
                   </button>
                 </th>
               ))}
-              <th className="sticky top-0 z-10 w-10 border-b-[2.5px] border-ink bg-butter md:hidden">
+              <th className="sticky top-0 z-10 border-b-[2.5px] border-ink bg-butter md:hidden">
                 <span className="sr-only">Details</span>
               </th>
             </tr>
@@ -193,20 +193,19 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
                       {cellText(d, c.key)}
                     </td>
                   ))}
-                  <td className="w-10 pr-3 text-right md:hidden">
+                  <td className="w-px pr-3 text-right whitespace-nowrap md:hidden">
                     <button
                       type="button"
                       aria-expanded={isOpen}
-                      aria-label={`${isOpen ? 'Hide' : 'Show'} details for ${d.date}`}
                       onClick={(e) => {
                         e.stopPropagation()
                         toggle(d.date)
                       }}
-                      className={`inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-2 border-ink font-sans text-xs transition-transform ${
-                        isOpen ? 'rotate-180 bg-lavender' : 'bg-white'
+                      className={`cursor-pointer rounded-md border-2 border-ink px-2 py-0.5 font-sans text-xs font-bold shadow-brut-sm ${
+                        isOpen ? 'bg-lavender' : 'bg-white'
                       }`}
                     >
-                      ▾
+                      {isOpen ? 'See less' : 'See more'}
                     </button>
                   </td>
                 </tr>
