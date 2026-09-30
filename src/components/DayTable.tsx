@@ -1,6 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useMemo, useRef, useState } from 'react'
-import { RangeChart } from '@/components/RangeChart'
 import { type Day, fmt } from '@/lib/data'
 
 type Key = keyof Day
@@ -55,16 +54,15 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
   const dayNums = useMemo(() => (month ? partsOf(days, `${year}-${month}-`, 8, 10) : []), [days, year, month])
   const prefix = [year, month, day].filter(Boolean).join('-')
 
-  // Chronological, for the chart; `rows` is the same set in table sort order
-  const filtered = useMemo(() => (prefix ? days.filter((d) => d.date.startsWith(prefix)) : days), [days, prefix])
   const rows = useMemo(() => {
+    const filtered = prefix ? days.filter((d) => d.date.startsWith(prefix)) : days
     return [...filtered].sort((a, b) => {
       const x = a[sortKey] ?? -Infinity
       const y = b[sortKey] ?? -Infinity
       const c = x < y ? -1 : x > y ? 1 : 0
       return dir === 'asc' ? c : -c
     })
-  }, [filtered, sortKey, dir])
+  }, [days, prefix, sortKey, dir])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
@@ -137,8 +135,7 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
           )}
         </div>
       </div>
-      {filtered.length > 0 && <RangeChart days={filtered} />}
-      <div ref={scrollRef} className="max-h-[560px] overflow-auto border-t-[2.5px] border-ink">
+      <div ref={scrollRef} className="max-h-[560px] overflow-auto">
         <table className="w-full border-collapse font-mono text-[13px] tabular-nums">
           <thead>
             <tr>
