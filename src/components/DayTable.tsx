@@ -14,8 +14,10 @@ const COLS: { key: Key; label: string; detail?: true }[] = [
   { key: 'rangePct', label: 'Range %', detail: true },
   { key: 'chgPct', label: 'Day chg %', detail: true },
 ]
-const DETAIL_COLS = COLS.filter((c) => c.detail)
-const MOBILE_COLSPAN = COLS.length - DETAIL_COLS.length + 1 // +1 for the chevron column
+// Expanded panel is a 2-column grid read row by row: Open | Close, High | Low, Range % | Day chg %
+const DETAIL_ORDER: Key[] = ['open', 'close', 'high', 'low', 'rangePct', 'chgPct']
+const DETAIL_COLS = DETAIL_ORDER.map((k) => COLS.find((c) => c.key === k)!)
+const MOBILE_COLSPAN = COLS.length - DETAIL_COLS.length + 1 // +1 for the See more column
 
 const chgClass = (v: number | null) => (v == null ? '' : v >= 0 ? 'text-up' : 'text-down')
 
