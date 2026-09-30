@@ -53,9 +53,6 @@ export default function App() {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <header className="flex flex-col items-center gap-4 text-center lg:flex-row lg:items-end lg:justify-between lg:text-left">
         <div className="flex flex-col items-center gap-2 lg:items-start">
-          <span className="brut w-fit rotate-[-2deg] bg-pink px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase shadow-brut-sm">
-            {meta.exchange} · {meta.yahoo}
-          </span>
           <h1 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">Market Dive</h1>
           <p className="max-w-[60ch] text-ink-soft">
             How far each index travels inside a single day: the high minus the low, in points, for every trading
