@@ -181,7 +181,7 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
               >
                 <tr
                   onClick={() => toggle(d.date)}
-                  className={`cursor-pointer hover:bg-lilac md:cursor-auto ${isOpen ? 'bg-lilac md:bg-transparent' : ''}`}
+                  className={`cursor-pointer hover:bg-lilac md:cursor-auto ${isOpen ? 'max-md:bg-lilac' : ''}`}
                 >
                   {COLS.map((c, i) => (
                     <td
