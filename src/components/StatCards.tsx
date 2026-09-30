@@ -12,11 +12,19 @@ export function StatCards({ s }: { s: Summary }) {
   return (
     <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {cards.map((c) => (
-        <div key={c.label} className={`brut ${c.bg} flex flex-col gap-1 p-4`}>
+        <div key={c.label} className={`brut ${c.bg} flex flex-col items-center gap-1 p-4 text-center lg:items-start lg:text-left`}>
           <span className="text-xs font-bold tracking-wider uppercase">{c.label}</span>
           <span className="font-mono text-2xl font-bold tabular-nums sm:text-3xl">{fmt(c.value)}</span>
           <span className="font-mono text-xs text-ink-soft">
-            {c.day ? `${fmtDate(c.day.date)} · ${fmt(c.day.rangePct)}%` : c.meta}
+            {c.day ? (
+              <>
+                <span className="block sm:inline">{fmtDate(c.day.date)}</span>
+                <span className="hidden sm:inline"> · </span>
+                <span className="block sm:inline">{fmt(c.day.rangePct)}%</span>
+              </>
+            ) : (
+              c.meta
+            )}
           </span>
         </div>
       ))}

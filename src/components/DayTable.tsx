@@ -63,12 +63,12 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
 
   return (
     <section className="brut overflow-hidden bg-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b-[2.5px] border-ink bg-lilac px-4 py-3">
+      <div className="flex flex-col items-center gap-3 border-b-[2.5px] border-ink bg-lilac px-4 py-3 text-center lg:flex-row lg:justify-between lg:text-left">
         <h2 className="text-sm font-bold">
           {name} · {rows.length.toLocaleString('en-IN')}
           {prefix && ` of ${days.length.toLocaleString('en-IN')}`} trading days
         </h2>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <DateSelect
             id="filter-year"
             label="Year"

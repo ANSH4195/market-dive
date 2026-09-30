@@ -51,8 +51,8 @@ export default function App() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-2">
+      <header className="flex flex-col items-center gap-4 text-center lg:flex-row lg:items-end lg:justify-between lg:text-left">
+        <div className="flex flex-col items-center gap-2 lg:items-start">
           <span className="brut w-fit rotate-[-2deg] bg-pink px-2.5 py-0.5 text-xs font-bold tracking-wider uppercase shadow-brut-sm">
             {meta.exchange} · {meta.yahoo}
           </span>
@@ -62,7 +62,7 @@ export default function App() {
             session.{file && ` Data through ${fmtDate(file.asof)}.`}
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap justify-center gap-3">
           <Segmented
             label="Index"
             value={indexId}
