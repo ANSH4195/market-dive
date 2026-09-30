@@ -28,7 +28,6 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
   const [year, setYear] = useState('')
   const [month, setMonth] = useState('')
   const [day, setDay] = useState('')
-  const [copyMsg, setCopyMsg] = useState<string | null>(null)
 
   const years = useMemo(() => partsOf(days, '', 0, 4).reverse(), [days])
   const months = useMemo(() => (year ? partsOf(days, `${year}-`, 5, 7) : []), [days, year])
@@ -60,20 +59,6 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
   const sortBy = (k: Key) => {
     setDir(k === sortKey && dir === 'desc' ? 'asc' : 'desc')
     setSortKey(k)
-  }
-
-  const copyCsv = async () => {
-    const csv = [
-      'date,open,high,low,close,range_pts,range_pct',
-      ...rows.map((d) => [d.date, d.open, d.high, d.low, d.close, d.range.toFixed(2), d.rangePct.toFixed(3)].join(',')),
-    ].join('\n')
-    try {
-      await navigator.clipboard.writeText(csv)
-      setCopyMsg(`Copied ${rows.length} rows`)
-    } catch {
-      setCopyMsg('Clipboard blocked')
-    }
-    setTimeout(() => setCopyMsg(null), 1800)
   }
 
   return (
@@ -127,13 +112,6 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
               Clear
             </button>
           )}
-          <button
-            type="button"
-            onClick={copyCsv}
-            className="brut-press cursor-pointer rounded-lg border-[2.5px] border-ink bg-butter px-3 py-1.5 text-sm font-bold shadow-brut-sm"
-          >
-            {copyMsg ?? 'Copy as CSV'}
-          </button>
         </div>
       </div>
       <div ref={scrollRef} className="max-h-[560px] overflow-auto">
