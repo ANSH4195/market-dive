@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { useMemo, useRef, useState } from 'react'
 import { type Day, fmt } from '@/lib/data'
 
 type Key = keyof Day
@@ -28,6 +29,18 @@ export function DayTable({ days, title }: { days: Day[]; title: string }) {
       return dir === 'asc' ? c : -c
     })
   }, [days, q, sortKey, dir])
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 33,
+    overscan: 15,
+  })
+  const items = virtualizer.getVirtualItems()
+  // Spacer rows stand in for the off-screen rows so the table keeps its real scroll height
+  const padTop = items[0]?.start ?? 0
+  const padBottom = items.length ? virtualizer.getTotalSize() - items[items.length - 1].end : 0
 
   const sortBy = (k: Key) => {
     setDir(k === sortKey && dir === 'desc' ? 'asc' : 'desc')
@@ -70,7 +83,7 @@ export function DayTable({ days, title }: { days: Day[]; title: string }) {
           </button>
         </div>
       </div>
-      <div className="max-h-[560px] overflow-auto">
+      <div ref={scrollRef} className="max-h-[560px] overflow-auto">
         <table className="w-full border-collapse font-mono text-[13px] tabular-nums">
           <thead>
             <tr>
@@ -95,22 +108,40 @@ export function DayTable({ days, title }: { days: Day[]; title: string }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((d) => (
-              <tr key={d.date} className="border-b border-lavender hover:bg-lilac">
-                <td className="px-3 py-1.5 whitespace-nowrap">{d.date}</td>
-                <td className="px-3 py-1.5 text-right">{fmt(d.open)}</td>
-                <td className="px-3 py-1.5 text-right">{fmt(d.high)}</td>
-                <td className="px-3 py-1.5 text-right">{fmt(d.low)}</td>
-                <td className="px-3 py-1.5 text-right">{fmt(d.close)}</td>
-                <td className="px-3 py-1.5 text-right font-bold text-plum">{fmt(d.range)}</td>
-                <td className="px-3 py-1.5 text-right">{fmt(d.rangePct)}</td>
-                <td
-                  className={`px-3 py-1.5 text-right ${d.chgPct == null ? '' : d.chgPct >= 0 ? 'text-up' : 'text-down'}`}
-                >
-                  {d.chgPct == null ? '—' : `${d.chgPct >= 0 ? '+' : ''}${fmt(d.chgPct)}`}
-                </td>
+            {padTop > 0 && (
+              <tr aria-hidden>
+                <td colSpan={COLS.length} style={{ height: padTop, padding: 0 }} />
               </tr>
-            ))}
+            )}
+            {items.map(({ index }) => {
+              const d = rows[index]
+              return (
+                <tr
+                  key={d.date}
+                  data-index={index}
+                  ref={virtualizer.measureElement}
+                  className="border-b border-lavender hover:bg-lilac"
+                >
+                  <td className="px-3 py-1.5 whitespace-nowrap">{d.date}</td>
+                  <td className="px-3 py-1.5 text-right">{fmt(d.open)}</td>
+                  <td className="px-3 py-1.5 text-right">{fmt(d.high)}</td>
+                  <td className="px-3 py-1.5 text-right">{fmt(d.low)}</td>
+                  <td className="px-3 py-1.5 text-right">{fmt(d.close)}</td>
+                  <td className="px-3 py-1.5 text-right font-bold text-plum">{fmt(d.range)}</td>
+                  <td className="px-3 py-1.5 text-right">{fmt(d.rangePct)}</td>
+                  <td
+                    className={`px-3 py-1.5 text-right ${d.chgPct == null ? '' : d.chgPct >= 0 ? 'text-up' : 'text-down'}`}
+                  >
+                    {d.chgPct == null ? '—' : `${d.chgPct >= 0 ? '+' : ''}${fmt(d.chgPct)}`}
+                  </td>
+                </tr>
+              )
+            })}
+            {padBottom > 0 && (
+              <tr aria-hidden>
+                <td colSpan={COLS.length} style={{ height: padBottom, padding: 0 }} />
+              </tr>
+            )}
             {!rows.length && (
               <tr>
                 <td colSpan={COLS.length} className="px-3 py-8 text-center font-sans text-ink-soft">
