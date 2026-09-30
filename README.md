@@ -1,6 +1,6 @@
 # Market Dive
 
-Daily high − low range (in index points) for SENSEX and NIFTY 50 over the last 5 years.
+How far SENSEX and NIFTY 50 move from each day's open over the last 5 years: High = peak − open, Low = open − trough (index points).
 
 Live: https://ansh4195.github.io/market-dive/
 

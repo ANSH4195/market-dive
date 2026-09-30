@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DayTable } from '@/components/DayTable'
 import { Segmented } from '@/components/Segmented'
-import { StatCards } from '@/components/StatCards'
 import {
   type Day,
   fmtDate,
@@ -11,7 +10,6 @@ import {
   loadIndex,
   PERIODS,
   type PeriodId,
-  summarize,
   toDays,
 } from '@/lib/data'
 
@@ -55,8 +53,8 @@ export default function App() {
         <div className="flex flex-col items-center gap-2 lg:items-start">
           <h1 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">Market Dive</h1>
           <p className="max-w-[60ch] text-ink-soft">
-            How far each index travels inside a single day: the high minus the low, in points, for every trading
-            session.{file && ` Data through ${fmtDate(file.asof)}.`}
+            How far each index climbs above and falls below its opening price every trading session, in
+            points.{file && ` Data through ${fmtDate(file.asof)}.`}
           </p>
         </div>
         <div className="flex flex-wrap justify-center gap-3">
@@ -88,15 +86,12 @@ export default function App() {
       )}
 
       {days.length > 0 && (
-        <>
-          <StatCards s={summarize(days)} />
-          {/* keyed so the date filter resets when the index or period changes */}
-          <DayTable key={`${indexId}-${period}`} days={days} name={meta.name} />
-        </>
+        // keyed so the date filter resets when the index or period changes
+        <DayTable key={`${indexId}-${period}`} days={days} name={meta.name} />
       )}
 
       <footer className="text-xs text-ink-soft">
-        Source: Yahoo Finance daily OHLC, refreshed every weekday after market close. Range % = (High − Low) ÷ Open.
+        Source: Yahoo Finance daily OHLC, refreshed every weekday after market close. High = day's peak − open. Low = open − day's trough.
         Days with missing or zero-width bars are dropped. Muhurat trading sessions are one hour long, so their ranges
         are tiny.
       </footer>

@@ -3,21 +3,21 @@ import { useMemo, useRef, useState } from 'react'
 import { type Day, fmt } from '@/lib/data'
 
 type Key = keyof Day
-// `detail` columns are hidden on phones and shown in the row's expanded panel instead
-const COLS: { key: Key; label: string; detail?: true }[] = [
+const COLS: { key: Key; label: string }[] = [
   { key: 'date', label: 'Date' },
-  { key: 'open', label: 'Open', detail: true },
-  { key: 'high', label: 'High', detail: true },
-  { key: 'low', label: 'Low', detail: true },
-  { key: 'close', label: 'Close', detail: true },
-  { key: 'range', label: 'Range (pts)' },
-  { key: 'rangePct', label: 'Range %', detail: true },
-  { key: 'chgPct', label: 'Day chg %', detail: true },
+  { key: 'up', label: 'High' },
+  { key: 'down', label: 'Low' },
 ]
-// Expanded panel is a 2-column grid read row by row: Open | Close, High | Low, Range % | Day chg %
-const DETAIL_ORDER: Key[] = ['open', 'close', 'high', 'low', 'rangePct', 'chgPct']
-const DETAIL_COLS = DETAIL_ORDER.map((k) => COLS.find((c) => c.key === k)!)
-const MOBILE_COLSPAN = COLS.length - DETAIL_COLS.length + 1 // +1 for the See more column
+// Expanded panel is a 2-column grid read row by row: Open | Close, Peak | Trough, Range | Day chg %
+const DETAILS: { key: Key; label: string }[] = [
+  { key: 'open', label: 'Open' },
+  { key: 'close', label: 'Close' },
+  { key: 'high', label: 'Peak' },
+  { key: 'low', label: 'Trough' },
+  { key: 'range', label: 'Range (pts)' },
+  { key: 'chgPct', label: 'Day chg %' },
+]
+const COLSPAN = COLS.length + 1 // +1 for the expander column
 
 const chgClass = (v: number | null) => (v == null ? '' : v >= 0 ? 'text-up' : 'text-down')
 
@@ -143,9 +143,7 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
                 <th
                   key={c.key}
                   aria-sort={sortKey === c.key ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                  className={`sticky top-0 z-10 border-b-[2.5px] border-ink bg-butter p-0 ${i ? 'text-right' : 'text-left'} ${
-                    c.detail ? 'hidden md:table-cell' : ''
-                  }`}
+                  className={`sticky top-0 z-10 border-b-[2.5px] border-ink bg-butter p-0 ${i ? 'text-right' : 'text-left'}`}
                 >
                   <button
                     type="button"
@@ -159,7 +157,7 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
                   </button>
                 </th>
               ))}
-              <th className="sticky top-0 z-10 border-b-[2.5px] border-ink bg-butter md:hidden">
+              <th className="sticky top-0 z-10 w-px border-b-[2.5px] border-ink bg-butter">
                 <span className="sr-only">Details</span>
               </th>
             </tr>
@@ -167,7 +165,7 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
           {padTop > 0 && (
             <tbody aria-hidden>
               <tr>
-                <td colSpan={COLS.length + 1} style={{ height: padTop, padding: 0 }} />
+                <td colSpan={COLSPAN} style={{ height: padTop, padding: 0 }} />
               </tr>
             </tbody>
           )}
@@ -183,39 +181,40 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
               >
                 <tr
                   onClick={() => toggle(d.date)}
-                  className={`cursor-pointer hover:bg-lilac md:cursor-auto ${isOpen ? 'max-md:bg-lilac' : ''}`}
+                  className={`cursor-pointer hover:bg-lilac ${isOpen ? 'bg-lilac' : ''}`}
                 >
                   {COLS.map((c, i) => (
                     <td
                       key={c.key}
-                      className={`px-3 py-2 whitespace-nowrap md:py-1.5 ${i ? 'text-right' : ''} ${
-                        c.detail ? 'hidden md:table-cell' : ''
-                      } ${c.key === 'range' ? 'font-bold text-plum' : ''} ${c.key === 'chgPct' ? chgClass(d.chgPct) : ''}`}
+                      className={`px-3 py-2 whitespace-nowrap ${i ? 'text-right font-bold' : ''} ${
+                        c.key === 'up' ? 'text-up' : c.key === 'down' ? 'text-down' : ''
+                      }`}
                     >
                       {cellText(d, c.key)}
                     </td>
                   ))}
-                  <td className="w-px pr-3 text-right whitespace-nowrap md:hidden">
+                  <td className="w-px pr-3 text-right whitespace-nowrap">
                     <button
                       type="button"
                       aria-expanded={isOpen}
+                      aria-label={isOpen ? 'Hide details' : 'Show details'}
                       onClick={(e) => {
                         e.stopPropagation()
                         toggle(d.date)
                       }}
-                      className={`cursor-pointer rounded-md border-2 border-ink px-2 py-0.5 font-sans text-xs font-bold shadow-brut-sm ${
+                      className={`size-7 cursor-pointer rounded-md border-2 border-ink font-sans text-base leading-none font-bold shadow-brut-sm ${
                         isOpen ? 'bg-lavender' : 'bg-white'
                       }`}
                     >
-                      {isOpen ? 'See less' : 'See more'}
+                      {isOpen ? '−' : '+'}
                     </button>
                   </td>
                 </tr>
                 {isOpen && (
-                  <tr className="bg-lilac md:hidden">
-                    <td colSpan={MOBILE_COLSPAN} className="px-3 pt-1 pb-3">
-                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-                        {DETAIL_COLS.map((c) => (
+                  <tr className="bg-lilac">
+                    <td colSpan={COLSPAN} className="px-3 pt-1 pb-3">
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 md:grid-cols-6">
+                        {DETAILS.map((c) => (
                           <div key={c.key} className="flex flex-col">
                             <dt className="font-sans text-[10px] font-bold tracking-wider text-ink-soft uppercase">
                               {c.label}
@@ -233,14 +232,14 @@ export function DayTable({ days, name }: { days: Day[]; name: string }) {
           {padBottom > 0 && (
             <tbody aria-hidden>
               <tr>
-                <td colSpan={COLS.length + 1} style={{ height: padBottom, padding: 0 }} />
+                <td colSpan={COLSPAN} style={{ height: padBottom, padding: 0 }} />
               </tr>
             </tbody>
           )}
           {!rows.length && (
             <tbody>
               <tr>
-                <td colSpan={COLS.length + 1} className="px-3 py-8 text-center font-sans text-ink-soft">
+                <td colSpan={COLSPAN} className="px-3 py-8 text-center font-sans text-ink-soft">
                   No trading days match this date.
                 </td>
               </tr>

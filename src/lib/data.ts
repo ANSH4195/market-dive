@@ -19,6 +19,10 @@ export interface Day {
   high: number
   low: number
   close: number
+  /** high − open: how far the day climbed above its start, in points */
+  up: number
+  /** open − low: how far the day fell below its start, in points */
+  down: number
   /** high − low, in index points */
   range: number
   /** range as % of the day's open */
@@ -51,6 +55,8 @@ export function toDays(rows: RawRow[]): Day[] {
       high,
       low,
       close,
+      up: high - open,
+      down: open - low,
       range: high - low,
       rangePct: ((high - low) / open) * 100,
       chgPct: prev ? ((close - prev) / prev) * 100 : null,
@@ -65,13 +71,6 @@ export function inPeriod(days: Day[], period: PeriodId): Day[] {
   cut.setUTCMonth(cut.getUTCMonth() - months)
   const cutStr = cut.toISOString().slice(0, 10)
   return days.filter((d) => d.date > cutStr)
-}
-
-export function summarize(days: Day[]) {
-  const sorted = [...days].sort((a, b) => a.range - b.range)
-  const n = sorted.length
-  const median = n % 2 ? sorted[(n - 1) / 2].range : (sorted[n / 2 - 1].range + sorted[n / 2].range) / 2
-  return { latest: days[n - 1], widest: sorted[n - 1], narrowest: sorted[0], median, count: n }
 }
 
 export const fmt = (v: number | null, digits = 2) =>
