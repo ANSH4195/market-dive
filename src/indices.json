@@ -1,0 +1,4 @@
+[
+  { "id": "sensex", "name": "SENSEX", "yahoo": "^BSESN", "exchange": "BSE" },
+  { "id": "nifty50", "name": "NIFTY 50", "yahoo": "^NSEI", "exchange": "NSE" }
+]

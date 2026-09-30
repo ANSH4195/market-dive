@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Rubik", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --color-ink: #1b1530;
+  --color-ink-soft: #5a5170;
+  --color-paper: #fbf8ff;
+  --color-plum: #6c5fc7;
+  --color-lavender: #d9ccff;
+  --color-lilac: #efe9ff;
+  --color-pink: #ffc8dd;
+  --color-butter: #ffefa1;
+  --color-mint: #c4f0d8;
+  --color-peach: #ffd7ba;
+  --color-sky: #cde7ff;
+  --color-up: #127a45;
+  --color-down: #c0342a;
+
+  --shadow-brut: 4px 4px 0 0 var(--color-ink);
+  --shadow-brut-sm: 2px 2px 0 0 var(--color-ink);
+}
+
+@layer base {
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    background-image: radial-gradient(color-mix(in oklab, var(--color-ink) 12%, transparent) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-plum);
+    outline-offset: 2px;
+  }
+}
+
+@utility brut {
+  border: 2.5px solid var(--color-ink);
+  border-radius: 12px;
+  box-shadow: var(--shadow-brut);
+}
+
+@utility brut-press {
+  transition: transform 80ms ease, box-shadow 80ms ease;
+  &:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 0 var(--color-ink); }
+  &:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 0 var(--color-ink); }
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+}
