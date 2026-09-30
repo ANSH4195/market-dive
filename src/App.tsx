@@ -1,9 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DayTable } from '@/components/DayTable'
-import { RangeChart } from '@/components/RangeChart'
 import { Segmented } from '@/components/Segmented'
 import { StatCards } from '@/components/StatCards'
-import { type Day, fmtDate, INDICES, type IndexFile, inPeriod, loadIndex, PERIODS, type PeriodId, summarize, toDays } from '@/lib/data'
+import {
+  type Day,
+  fmtDate,
+  INDICES,
+  type IndexFile,
+  inPeriod,
+  loadIndex,
+  PERIODS,
+  type PeriodId,
+  summarize,
+  toDays,
+} from '@/lib/data'
 
 const stored = (k: string) => {
   try {
@@ -20,9 +30,7 @@ const store = (k: string, v: string) => {
 
 export default function App() {
   const [indexId, setIndexId] = useState(() => INDICES.find((i) => i.id === stored('md:index'))?.id ?? INDICES[0].id)
-  const [period, setPeriod] = useState<PeriodId>(
-    () => PERIODS.find((p) => p.id === stored('md:period'))?.id ?? '5Y',
-  )
+  const [period, setPeriod] = useState<PeriodId>(() => PERIODS.find((p) => p.id === stored('md:period'))?.id ?? '5Y')
   const [file, setFile] = useState<IndexFile | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,8 +93,8 @@ export default function App() {
       {days.length > 0 && (
         <>
           <StatCards s={summarize(days)} />
-          <RangeChart days={days} />
-          <DayTable days={days} title={`${meta.name} · ${days.length.toLocaleString('en-IN')} trading days`} />
+          {/* keyed so the date filter resets when the index or period changes */}
+          <DayTable key={`${indexId}-${period}`} days={days} name={meta.name} />
         </>
       )}
 

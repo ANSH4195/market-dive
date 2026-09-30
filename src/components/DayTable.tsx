@@ -14,21 +14,36 @@ const COLS: { key: Key; label: string }[] = [
   { key: 'chgPct', label: 'Day chg %' },
 ]
 
-export function DayTable({ days, title }: { days: Day[]; title: string }) {
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** Distinct values of date.slice(from, to) among dates starting with prefix, in date order */
+const partsOf = (days: Day[], prefix: string, from: number, to: number) => [
+  ...new Set(days.filter((d) => d.date.startsWith(prefix)).map((d) => d.date.slice(from, to))),
+]
+
+export function DayTable({ days, name }: { days: Day[]; name: string }) {
   const [sortKey, setSortKey] = useState<Key>('date')
   const [dir, setDir] = useState<'asc' | 'desc'>('desc')
-  const [q, setQ] = useState('')
+  // Date filter narrows in order: year, then month within it, then day within that
+  const [year, setYear] = useState('')
+  const [month, setMonth] = useState('')
+  const [day, setDay] = useState('')
   const [copyMsg, setCopyMsg] = useState<string | null>(null)
 
+  const years = useMemo(() => partsOf(days, '', 0, 4).reverse(), [days])
+  const months = useMemo(() => (year ? partsOf(days, `${year}-`, 5, 7) : []), [days, year])
+  const dayNums = useMemo(() => (month ? partsOf(days, `${year}-${month}-`, 8, 10) : []), [days, year, month])
+  const prefix = [year, month, day].filter(Boolean).join('-')
+
   const rows = useMemo(() => {
-    const filtered = q ? days.filter((d) => d.date.includes(q.trim())) : days
+    const filtered = prefix ? days.filter((d) => d.date.startsWith(prefix)) : days
     return [...filtered].sort((a, b) => {
       const x = a[sortKey] ?? -Infinity
       const y = b[sortKey] ?? -Infinity
       const c = x < y ? -1 : x > y ? 1 : 0
       return dir === 'asc' ? c : -c
     })
-  }, [days, q, sortKey, dir])
+  }, [days, prefix, sortKey, dir])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
@@ -64,16 +79,54 @@ export function DayTable({ days, title }: { days: Day[]; title: string }) {
   return (
     <section className="brut overflow-hidden bg-white">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b-[2.5px] border-ink bg-lilac px-4 py-3">
-        <h2 className="text-sm font-bold">{title}</h2>
-        <div className="flex flex-wrap gap-3">
-          <input
-            id="date-filter"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Filter: 2024-06"
-            aria-label="Filter by date"
-            className="w-40 rounded-lg border-[2.5px] border-ink bg-white px-3 py-1.5 font-mono text-sm shadow-brut-sm placeholder:text-ink-soft/60"
+        <h2 className="text-sm font-bold">
+          {name} · {rows.length.toLocaleString('en-IN')}
+          {prefix && ` of ${days.length.toLocaleString('en-IN')}`} trading days
+        </h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <DateSelect
+            id="filter-year"
+            label="Year"
+            value={year}
+            options={years.map((y) => [y, y])}
+            onChange={(v) => {
+              setYear(v)
+              setMonth('')
+              setDay('')
+            }}
           />
+          <DateSelect
+            id="filter-month"
+            label="Month"
+            value={month}
+            disabled={!year}
+            options={months.map((m) => [m, MONTHS[Number(m) - 1]])}
+            onChange={(v) => {
+              setMonth(v)
+              setDay('')
+            }}
+          />
+          <DateSelect
+            id="filter-day"
+            label="Day"
+            value={day}
+            disabled={!month}
+            options={dayNums.map((d) => [d, String(Number(d))])}
+            onChange={setDay}
+          />
+          {prefix && (
+            <button
+              type="button"
+              onClick={() => {
+                setYear('')
+                setMonth('')
+                setDay('')
+              }}
+              className="cursor-pointer text-sm font-semibold text-plum underline underline-offset-2"
+            >
+              Clear
+            </button>
+          )}
           <button
             type="button"
             onClick={copyCsv}
@@ -145,7 +198,7 @@ export function DayTable({ days, title }: { days: Day[]; title: string }) {
             {!rows.length && (
               <tr>
                 <td colSpan={COLS.length} className="px-3 py-8 text-center font-sans text-ink-soft">
-                  No trading days match "{q}".
+                  No trading days match this date.
                 </td>
               </tr>
             )}
@@ -153,5 +206,39 @@ export function DayTable({ days, title }: { days: Day[]; title: string }) {
         </table>
       </div>
     </section>
+  )
+}
+
+function DateSelect({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+  disabled = false,
+}: {
+  id: string
+  label: string
+  value: string
+  options: [value: string, text: string][]
+  onChange: (v: string) => void
+  disabled?: boolean
+}) {
+  return (
+    <select
+      id={id}
+      aria-label={label}
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      className="cursor-pointer rounded-lg border-[2.5px] border-ink bg-white px-2.5 py-1.5 text-sm font-semibold shadow-brut-sm disabled:cursor-not-allowed disabled:border-ink-soft/40 disabled:text-ink-soft/50 disabled:shadow-none"
+    >
+      <option value="">{`Any ${label.toLowerCase()}`}</option>
+      {options.map(([v, text]) => (
+        <option key={v} value={v}>
+          {text}
+        </option>
+      ))}
+    </select>
   )
 }
